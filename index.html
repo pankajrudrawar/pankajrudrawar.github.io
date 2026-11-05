@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pankaj Rudrawar | Terraform modules for cloud storage</title>
+  <meta name="description" content="Open-source Terraform modules for AWS and Azure storage: EFS, FSx for Lustre, FSx for NetApp ONTAP, S3, Azure Storage, Azure NetApp Files and virtual networks.">
+  <meta property="og:title" content="Terraform modules for cloud storage">
+  <meta property="og:description" content="Storage-first Terraform modules for AWS and Azure, with secure defaults, typed inputs and CI validation.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23101B2D'/%3E%3Crect x='6' y='8' width='20' height='4' rx='1' fill='%23E8A33D'/%3E%3Crect x='6' y='14' width='14' height='4' rx='1' fill='%232B8CE0'/%3E%3Crect x='6' y='20' width='8' height='4' rx='1' fill='%238E5CD0'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #EEF1F4;
+      --surface: #FFFFFF;
+      --ink: #101B2D;
+      --muted: #4A5A70;
+      --rule: #CBD3DD;
+      --aws: #E8A33D;
+      --azure: #2B8CE0;
+      --tf: #8E5CD0;
+      --link: #0B5CAD;
+      --code-bg: #0D1626;
+      --code-ink: #D6E2F0;
+      --code-dim: #7C8DA6;
+      --code-add: #6FD08C;
+      --radius: 6px;
+      --measure: 62ch;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #0C1424;
+        --surface: #121D31;
+        --ink: #E4EBF4;
+        --muted: #A3B2C6;
+        --rule: #26364F;
+        --link: #6DB3F2;
+        --code-bg: #070D18;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 1.0625rem;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--link); text-underline-offset: 0.18em; text-decoration-thickness: 0.08em; }
+    a:hover { text-decoration-thickness: 0.14em; }
+    a:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--tf);
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+    h1, h2, h3 {
+      font-family: "Bricolage Grotesque", "Public Sans", system-ui, sans-serif;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    code, pre { font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace; }
+    .skip {
+      position: absolute; left: -999px; top: 0;
+      background: var(--ink); color: var(--paper); padding: 0.6rem 1rem; z-index: 10;
+    }
+    .skip:focus { left: 0; }
+
+    .wrap { width: min(1120px, 100% - 2rem); margin-inline: auto; }
+
+    /* Header */
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 0; }
+    .brand { display: flex; align-items: center; gap: 0.7rem; font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+    .tiers { display: grid; gap: 3px; width: 26px; }
+    .tiers i { display: block; height: 5px; border-radius: 1px; }
+    .tiers i:nth-child(1) { background: var(--aws); width: 26px; }
+    .tiers i:nth-child(2) { background: var(--azure); width: 18px; }
+    .tiers i:nth-child(3) { background: var(--tf); width: 10px; }
+    .topbar nav { display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: 0.95rem; }
+    .topbar nav a { color: var(--ink); text-decoration: none; padding-block: 0.25rem; border-bottom: 2px solid transparent; }
+    .topbar nav a:hover { border-bottom-color: var(--tf); }
+
+    /* Hero */
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; padding: clamp(2rem, 6vw, 4.5rem) 0 clamp(2.5rem, 6vw, 5rem); }
+    .hero h1 { font-size: clamp(2.3rem, 5.2vw, 3.9rem); font-weight: 700; max-width: 14ch; }
+    .hero p.lede { font-size: 1.2rem; color: var(--muted); max-width: 46ch; margin: 1.25rem 0 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.75rem; }
+    .btn { display: inline-block; padding: 0.7rem 1.15rem; border-radius: var(--radius); font-weight: 600; font-size: 0.98rem; text-decoration: none; border: 2px solid var(--ink); }
+    .btn.primary { background: var(--ink); color: var(--paper); }
+    .btn.primary:hover { background: var(--tf); border-color: var(--tf); color: #fff; }
+    .btn.secondary { background: transparent; color: var(--ink); }
+    .btn.secondary:hover { background: var(--surface); }
+
+    /* Plan panel: the one memorable element */
+    .plan { background: var(--code-bg); color: var(--code-ink); border-radius: 10px; border: 1px solid #1E2E48; overflow: hidden; box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset; }
+    .plan-head { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1rem; border-bottom: 1px solid #1E2E48; font-size: 0.78rem; color: var(--code-dim); }
+    .plan-head .dots { display: flex; gap: 6px; }
+    .plan-head .dots i { width: 9px; height: 9px; border-radius: 50%; background: #2A3B58; display: block; }
+    .plan pre { margin: 0; padding: 1rem 1.15rem 1.2rem; font-size: clamp(0.72rem, 1.55vw, 0.86rem); line-height: 1.65; overflow-x: auto; }
+    .plan .ln { display: block; white-space: pre; animation: reveal 0.01s both; animation-delay: calc(var(--i) * 140ms + 300ms); }
+    .plan .dim { color: var(--code-dim); }
+    .plan .add { color: var(--code-add); }
+    .plan .str { color: #E7C987; }
+    .plan .aws { color: var(--aws); }
+    .plan .az { color: #5DB0F5; }
+    .plan .sum { color: #fff; font-weight: 500; }
+    @keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+    .plan-note { padding: 0 1.15rem 0.9rem; margin: 0; font-size: 0.75rem; color: var(--code-dim); }
+
+    /* Sections */
+    section { padding: clamp(2.5rem, 6vw, 4.5rem) 0; border-top: 1px solid var(--rule); }
+    .section-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1.5rem 3rem; margin-bottom: 2rem; align-items: end; }
+    .section-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); font-weight: 700; }
+    .section-head p { margin: 0; color: var(--muted); max-width: var(--measure); }
+
+    /* Module catalog as rows */
+    .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: 0.92rem; color: var(--muted); margin-bottom: 1rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 0.5rem; }
+    .legend b { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+    .rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+    .row { display: grid; grid-template-columns: 6px minmax(0, 15rem) minmax(0, 1fr) auto; gap: 1.25rem; align-items: center; padding: 1.1rem 0; border-bottom: 1px solid var(--rule); }
+    .row .bar { align-self: stretch; border-radius: 3px; background: var(--aws); }
+    .row.azure .bar { background: var(--azure); }
+    .row h3 { font-size: 1.12rem; font-weight: 700; letter-spacing: -0.01em; word-break: break-word; }
+    .row h3 a { color: var(--ink); text-decoration: none; }
+    .row h3 a:hover { text-decoration: underline; text-decoration-color: var(--tf); }
+    .row .cloud { display: block; font-size: 0.85rem; color: var(--muted); font-family: "Public Sans", sans-serif; font-weight: 500; margin-top: 0.25rem; letter-spacing: 0; }
+    .row p { margin: 0; color: var(--muted); font-size: 0.98rem; max-width: 60ch; }
+    .row .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; max-width: 15rem; list-style: none; margin: 0; padding: 0; }
+    .row .chips li { font-size: 0.8rem; padding: 0.15rem 0.55rem; border: 1px solid var(--rule); border-radius: 999px; background: var(--surface); color: var(--ink); }
+    .row.planned { opacity: 0.72; }
+    .row.planned .bar { background: repeating-linear-gradient(135deg, var(--rule) 0 4px, transparent 4px 8px); }
+    .row.planned h3 { font-weight: 500; }
+    .row.planned h3 span { color: var(--ink); }
+    .subhead { margin: 2.25rem 0 0.75rem; font-size: 1rem; font-weight: 600; color: var(--muted); font-family: "Public Sans", sans-serif; letter-spacing: 0; }
+
+    /* Principles */
+    .principles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 3rem; }
+    .principles h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .principles p { margin: 0 0 0.9rem; color: var(--muted); max-width: 52ch; }
+    .principles pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.8rem; line-height: 1.6; overflow-x: auto; }
+    .principles .str { color: #E7C987; }
+    .principles .dim { color: var(--code-dim); }
+
+    /* Resources */
+    .res-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem 1.75rem; }
+    .res-grid h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.7rem; padding-bottom: 0.55rem; border-bottom: 3px solid var(--tf); display: inline-block; }
+    .res-grid ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+    .res-grid li { font-size: 0.97rem; line-height: 1.4; }
+    .res-grid li small { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 0.1rem; }
+
+    /* About */
+    .about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1.5rem 3rem; }
+    .about h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
+    .about p { margin: 0 0 1rem; max-width: var(--measure); }
+    .about p.muted { color: var(--muted); }
+    .certs { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; }
+    .certs li { font-size: 0.88rem; padding: 0.25rem 0.7rem; border-radius: 4px; background: var(--surface); border: 1px solid var(--rule); }
+
+    .row h3 .reg { font-size: 0.8rem; font-weight: 500; margin-left: 0.6rem; }
+    footer { border-top: 1px solid var(--rule); padding: 2rem 0 3rem; color: var(--muted); font-size: 0.92rem; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+    @media (max-width: 960px) {
+      .hero { grid-template-columns: 1fr; }
+      .section-head, .about { grid-template-columns: 1fr; }
+      .res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .row { grid-template-columns: 6px minmax(0, 1fr); }
+      .row .bar { grid-row: 1 / span 3; }
+      .row .chips { justify-content: flex-start; max-width: none; }
+    }
+    @media (max-width: 620px) {
+      .principles, .res-grid { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+      .brand { white-space: nowrap; }
+      .topbar nav { gap: 0.4rem 1.1rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .plan .ln { opacity: 1; animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#modules">Skip to modules</a>
+
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" href="#top" id="top">
+        <span class="tiers" aria-hidden="true"><i></i><i></i><i></i></span>
+        Pankaj Rudrawar
+      </a>
+      <nav aria-label="Primary">
+        <a href="#modules">Modules</a>
+        <a href="#approach">Approach</a>
+        <a href="#resources">Resources</a>
+        <a href="#about">About</a>
+        <a href="https://github.com/pankajrudrawar">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="hero">
+        <div>
+          <h1>Terraform modules for cloud storage</h1>
+          <p class="lede">File, object and network layers for AWS and Azure. Secure defaults, typed inputs, and CI validation on every change.</p>
+          <div class="actions">
+            <a class="btn primary" href="#modules">Browse the modules</a>
+            <a class="btn secondary" href="https://github.com/pankajrudrawar?tab=repositories&amp;q=terraform-">View on GitHub</a>
+          </div>
+        </div>
+
+        <figure class="plan" style="margin:0" aria-label="Example terraform plan output">
+          <div class="plan-head">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span>terraform plan</span>
+          </div>
+<pre aria-hidden="false"><span class="ln dim" style="--i:0">$ terraform plan</span><span class="ln" style="--i:1"> </span><span class="ln" style="--i:2">  <span class="aws"># module.efs.aws_efs_file_system.this[0]</span></span><span class="ln add" style="--i:3">  + resource "aws_efs_file_system" "this" {</span><span class="ln add" style="--i:4">      + encrypted       = <span class="str">true</span></span><span class="ln add" style="--i:5">      + throughput_mode = <span class="str">"elastic"</span></span><span class="ln add" style="--i:6">    }</span><span class="ln" style="--i:7"> </span><span class="ln" style="--i:8">  <span class="aws"># module.ontap.aws_fsx_ontap_volume.this["data"]</span></span><span class="ln add" style="--i:9">  + resource "aws_fsx_ontap_volume" "this" {</span><span class="ln add" style="--i:10">      + junction_path = <span class="str">"/data"</span></span><span class="ln add" style="--i:11">    }</span><span class="ln" style="--i:12"> </span><span class="ln" style="--i:13">  <span class="az"># module.anf.azurerm_netapp_volume.this["data01"]</span></span><span class="ln add" style="--i:14">  + resource "azurerm_netapp_volume" "this" {</span><span class="ln add" style="--i:15">      + service_level = <span class="str">"Premium"</span></span><span class="ln add" style="--i:16">    }</span><span class="ln" style="--i:17"> </span><span class="ln sum" style="--i:18">Plan: 3 to add, 0 to change, 0 to destroy.</span></pre>
+          <p class="plan-note">Illustrative output, shortened for display.</p>
+        </figure>
+      </div>
+
+      <section id="modules" aria-labelledby="modules-h">
+        <div class="section-head">
+          <h2 id="modules-h">Modules</h2>
+          <p>Each module lives in its own repository and follows the layout used by the <a href="https://github.com/terraform-aws-modules">terraform-aws-modules</a> collection: root module, a runnable example, pre-commit hooks and a GitHub Actions workflow.</p>
+        </div>
+
+        <div class="legend" aria-label="Color key">
+          <span><b style="background:var(--aws)"></b>AWS</span>
+          <span><b style="background:var(--azure)"></b>Azure</span>
+          <span><b style="background:repeating-linear-gradient(135deg,var(--rule) 0 4px,transparent 4px 8px)"></b>Planned</span>
+        </div>
+
+        <ul class="rows">
+          <li class="row aws">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><a href="https://github.com/pankajrudrawar/terraform-aws-efs">terraform-aws-efs</a><a class="reg" href="https://registry.terraform.io/modules/pankajrudrawar/efs/aws">Registry</a><span class="cloud">AWS, file</span></h3>
+            <p>Amazon EFS with mount targets, access points, lifecycle tiering, backups and an optional security group.</p>
+            <ul class="chips"><li>Encrypted</li><li>One Zone</li><li>Access points</li></ul>
+          </li>
+          <li class="row aws">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><a href="https://github.com/pankajrudrawar/terraform-aws-fsx-lustre">terraform-aws-fsx-lustre</a><a class="reg" href="https://registry.terraform.io/modules/pankajrudrawar/fsx-lustre/aws">Registry</a><span class="cloud">AWS, high-performance file</span></h3>
+            <p>FSx for Lustre in scratch or persistent mode, with EFA support, an optional S3 data repository link and a Lustre-aware security group.</p>
+            <ul class="chips"><li>EFA</li><li>S3 link</li><li>Backups</li></ul>
+          </li>
+          <li class="row aws">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><a href="https://github.com/pankajrudrawar/terraform-aws-fsx-ontap">terraform-aws-fsx-ontap</a><a class="reg" href="https://registry.terraform.io/modules/pankajrudrawar/fsx-ontap/aws">Registry</a><span class="cloud">AWS, enterprise file and block</span></h3>
+            <p>FSx for NetApp ONTAP with storage virtual machines, Active Directory join, tiered volumes and protocol-based security groups.</p>
+            <ul class="chips"><li>Multi-AZ</li><li>SVMs</li><li>NFS, SMB, iSCSI</li></ul>
+          </li>
+          <li class="row aws">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><a href="https://github.com/pankajrudrawar/terraform-aws-s3-bucket">terraform-aws-s3-bucket</a><a class="reg" href="https://registry.terraform.io/modules/pankajrudrawar/s3-bucket/aws">Registry</a><span class="cloud">AWS, object</span></h3>
+            <p>A locked-down S3 bucket: public access blocked, versioning, encryption, TLS-only policy and lifecycle rules.</p>
+            <ul class="chips"><li>Block public access</li><li>Lifecycle</li><li>TLS only</li></ul>
+          </li>
+          <li class="row azure">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><a href="https://github.com/pankajrudrawar/terraform-azurerm-storage-account">terraform-azurerm-storage-account</a><a class="reg" href="https://registry.terraform.io/modules/pankajrudrawar/storage-account/azurerm">Registry</a><span class="cloud">Azure, object and file</span></h3>
+            <p>Storage account with containers, file shares, lifecycle management and firewall rules, secure by default.</p>
+            <ul class="chips"><li>TLS 1.2+</li><li>Data Lake Gen2</li><li>Lifecycle</li></ul>
+          </li>
+          <li class="row azure">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><a href="https://github.com/pankajrudrawar/terraform-azurerm-netapp-files">terraform-azurerm-netapp-files</a><a class="reg" href="https://registry.terraform.io/modules/pankajrudrawar/netapp-files/azurerm">Registry</a><span class="cloud">Azure, enterprise file</span></h3>
+            <p>Azure NetApp Files account, capacity pools, snapshot policies and NFS or SMB volumes with export policies.</p>
+            <ul class="chips"><li>Capacity pools</li><li>Snapshots</li><li>NFS, SMB</li></ul>
+          </li>
+          <li class="row azure">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><a href="https://github.com/pankajrudrawar/terraform-azurerm-virtual-network">terraform-azurerm-virtual-network</a><a class="reg" href="https://registry.terraform.io/modules/pankajrudrawar/virtual-network/azurerm">Registry</a><span class="cloud">Azure, network</span></h3>
+            <p>Virtual network with subnets, delegations, service endpoints and optional per-subnet security groups.</p>
+            <ul class="chips"><li>Delegation</li><li>NSGs</li><li>Service endpoints</li></ul>
+          </li>
+        </ul>
+
+        <h3 class="subhead">Planned next</h3>
+        <ul class="rows">
+          <li class="row aws planned">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><span>terraform-aws-fsx-windows</span><span class="cloud">AWS, Windows file</span></h3>
+            <p>FSx for Windows File Server with Active Directory integration.</p>
+            <span></span>
+          </li>
+          <li class="row aws planned">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><span>terraform-aws-vpc</span><span class="cloud">AWS, network</span></h3>
+            <p>VPC with private subnets and endpoints for storage services.</p>
+            <span></span>
+          </li>
+          <li class="row azure planned">
+            <span class="bar" aria-hidden="true"></span>
+            <h3><span>terraform-azurerm-aks</span><span class="cloud">Azure, Kubernetes</span></h3>
+            <p>AKS cluster with storage classes for Azure Files and NetApp Files.</p>
+            <span></span>
+          </li>
+        </ul>
+      </section>
+
+      <section id="approach" aria-labelledby="approach-h">
+        <div class="section-head">
+          <h2 id="approach-h">How the modules are built</h2>
+          <p>Storage is long-lived and expensive to get wrong, so the modules favor settings that are safe on the first apply and easy to change later.</p>
+        </div>
+        <div class="principles">
+          <div>
+            <h3>Secure defaults</h3>
+            <p>Encryption on, public access off, TLS enforced. Anything riskier needs an explicit input.</p>
+          </div>
+          <div>
+            <h3>Maps instead of lists</h3>
+            <p>Mount targets, volumes and rules are keyed maps. Adding or removing one entry never reshuffles the others.</p>
+<pre><span class="dim"># keys stay stable, so plans stay small</span>
+mount_targets = {
+  az1 = { subnet_id = <span class="str">"subnet-0a1"</span> }
+  az2 = { subnet_id = <span class="str">"subnet-0b2"</span> }
+}</pre>
+          </div>
+          <div>
+            <h3>Secrets stay separate</h3>
+            <p>Passwords are their own <code>sensitive</code> variables, so the rest of each object remains readable in plans and reviews.</p>
+          </div>
+          <div>
+            <h3>Checked on every push</h3>
+            <p>GitHub Actions runs <code>terraform fmt</code>, <code>validate</code> and TFLint for the module and its example. Pre-commit hooks keep the docs in sync.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="resources" aria-labelledby="resources-h">
+        <div class="section-head">
+          <h2 id="resources-h">Terraform resources</h2>
+          <p>The documentation, providers and tools I use and recommend when building infrastructure as code for storage.</p>
+        </div>
+        <div class="res-grid">
+          <div>
+            <h3>Learn and reference</h3>
+            <ul>
+              <li><a href="https://developer.hashicorp.com/terraform">Terraform documentation</a></li>
+              <li><a href="https://developer.hashicorp.com/terraform/language">Terraform language guide</a></li>
+              <li><a href="https://registry.terraform.io">Terraform Registry</a></li>
+              <li><a href="https://opentofu.org">OpenTofu</a><small>Open-source fork, drop-in for most modules</small></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Providers</h3>
+            <ul>
+              <li><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs">AWS provider</a></li>
+              <li><a href="https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs">AzureRM provider</a></li>
+              <li><a href="https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs">Kubernetes provider</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Storage service docs</h3>
+            <ul>
+              <li><a href="https://docs.aws.amazon.com/efs/">Amazon EFS</a></li>
+              <li><a href="https://docs.aws.amazon.com/fsx/">Amazon FSx</a></li>
+              <li><a href="https://docs.aws.amazon.com/s3/">Amazon S3</a></li>
+              <li><a href="https://learn.microsoft.com/azure/storage/">Azure Storage</a></li>
+              <li><a href="https://learn.microsoft.com/azure/azure-netapp-files/">Azure NetApp Files</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Reference module collections</h3>
+            <ul>
+              <li><a href="https://github.com/terraform-aws-modules">terraform-aws-modules</a><small>The layout these modules follow</small></li>
+              <li><a href="https://azure.github.io/Azure-Verified-Modules/">Azure Verified Modules</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Quality and security tools</h3>
+            <ul>
+              <li><a href="https://github.com/terraform-linters/tflint">TFLint</a><small>Linting and provider-aware checks</small></li>
+              <li><a href="https://terraform-docs.io">terraform-docs</a><small>Generated module reference</small></li>
+              <li><a href="https://github.com/antonbabenko/pre-commit-terraform">pre-commit-terraform</a></li>
+              <li><a href="https://www.checkov.io">Checkov</a><small>Policy scanning for plans and code</small></li>
+              <li><a href="https://trivy.dev">Trivy</a><small>Misconfiguration scanning</small></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Operations</h3>
+            <ul>
+              <li><a href="https://terragrunt.gruntwork.io">Terragrunt</a><small>DRY configuration across environments</small></li>
+              <li><a href="https://www.infracost.io">Infracost</a><small>Cost estimates in pull requests</small></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="about" aria-labelledby="about-h">
+        <div class="about">
+          <h2 id="about-h">About</h2>
+          <div>
+            <p>I'm Pankaj Rudrawar, a cloud storage architect with more than 20 years of experience designing enterprise storage, data center migrations and hybrid multi-cloud environments.</p>
+            <p class="muted">My background covers Dell EMC, NetApp and Pure Storage platforms alongside AWS and Azure storage services, Kubernetes and infrastructure as code. These modules are the patterns I keep reaching for, written down so they can be reused and reviewed.</p>
+            <ul class="certs" aria-label="Certifications">
+              <li>Certified Kubernetes Administrator</li>
+              <li>AWS Solutions Architect Associate</li>
+              <li>Azure Solutions Architect</li>
+              <li>VMware VCP</li>
+            </ul>
+            <p style="margin-top:1.5rem"><a href="https://github.com/pankajrudrawar">github.com/pankajrudrawar</a></p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="wrap">
+      <span>Issues and pull requests are welcome in each repository. Modules are released under the Apache 2.0 license. Opinions and examples are my own.</span>
+      <a href="#top">Back to top</a>
+    </div>
+  </footer>
+</body>
+</html>
